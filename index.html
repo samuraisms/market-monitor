@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Market Monitor</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#14181f;--mute:#667085;--line:#e4e7ec;--up:#0a7d3e;--upbg:#d9f2e3;--dn:#b42318;--dnbg:#fbe0dd}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1116;--card:#171b22;--ink:#e8eaee;--mute:#8b94a3;--line:#262c36;--up:#4ade80;--upbg:#12361f;--dn:#f87171;--dnbg:#3d1714}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,sans-serif;padding:14px;max-width:900px;margin-inline:auto}
+h1{font-size:20px;margin:4px 0}.sub{color:var(--mute);font-size:13px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.card .l{font-size:12px;color:var(--mute)}.card .n{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+.up .n{color:var(--up)}.dn .n{color:var(--dn)}
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:13px;white-space:nowrap}
+th,td{padding:6px 9px;text-align:right;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--card)}
+th{color:var(--mute);font-weight:600;font-size:12px}td.u{background:var(--upbg);color:var(--up)}td.d{background:var(--dnbg);color:var(--dn)}
+.note{color:var(--mute);font-size:12px;margin-top:12px}
+</style></head><body>
+<h1>Market Monitor</h1>
+<div class="sub" id="sub">Loading…</div>
+<div class="grid" id="cards"></div>
+<div class="wrap"><table id="tbl"></table></div>
+<p class="note">Counts of US common stocks (price ≥ $3, volume ≥ 100k). Updated daily after the close. Data from Yahoo Finance, so small differences from other sources are expected.</p>
+<script>
+const COLS=[["up4","Up 4%+ day"],["down4","Down 4%+ day"],["up25q","Up 25% qtr"],["down25q","Down 25% qtr"],["up25m","Up 25% mo"],["down25m","Down 25% mo"],["up50m","Up 50% mo"],["down50m","Down 50% mo"],["up13_34","Up 13% 34d"],["down13_34","Down 13% 34d"]];
+fetch("data.json?"+Date.now()).then(r=>r.json()).then(d=>{
+ const h=d.history.slice().reverse();
+ if(!h.length){document.getElementById("sub").textContent="No data yet. Run the update workflow once.";return}
+ const t=h[0];
+ document.getElementById("sub").textContent="Market date "+t.date+" · "+t.universe.toLocaleString()+" stocks scanned";
+ document.getElementById("cards").innerHTML=COLS.map(([k,l])=>`<div class="card ${k.startsWith("up")?"up":"dn"}"><div class="l">${l}</div><div class="n">${t[k].toLocaleString()}</div></div>`).join("");
+ const rows=h.slice(0,40).map(r=>"<tr><td>"+r.date.slice(5)+"</td>"+COLS.map(([k])=>`<td class="${k.startsWith("up")?"u":"d"}">${r[k]}</td>`).join("")+"</tr>").join("");
+ document.getElementById("tbl").innerHTML="<tr><th>Date</th>"+COLS.map(c=>"<th>"+c[1]+"</th>").join("")+"</tr>"+rows;
+}).catch(()=>{document.getElementById("sub").textContent="Could not load data."});
+</script></body></html>
